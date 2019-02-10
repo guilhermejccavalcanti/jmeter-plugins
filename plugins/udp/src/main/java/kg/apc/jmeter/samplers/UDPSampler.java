@@ -5,7 +5,6 @@ import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.testelement.ThreadListener;
 import org.apache.jorphan.logging.LoggingManager;
 import org.apache.log.Logger;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -17,10 +16,19 @@ import java.nio.channels.spi.AbstractSelectableChannel;
 public class UDPSampler extends AbstractIPSampler implements UDPTrafficDecoder, ThreadListener {
 
     private static final Logger log = LoggingManager.getLoggerForClass();
+
     public static final String ENCODECLASS = "encodeclass";
+
     public static final String WAITRESPONSE = "waitresponse";
+
     public static final String CLOSECHANNEL = "closechannel";
+
+    public static final String BIND_ADDRESS = "bind_address";
+
+    public static final String BIND_PORT = "bind_port";
+
     private DatagramChannel channel;
+
     private UDPTrafficDecoder encoder;
 
     public boolean isWaitResponse() {
@@ -45,6 +53,26 @@ public class UDPSampler extends AbstractIPSampler implements UDPTrafficDecoder, 
 
     public void setEncoderClass(String text) {
         setProperty(ENCODECLASS, text);
+    }
+
+    public String getBindAddress() {
+        return getPropertyAsString(BIND_ADDRESS);
+    }
+
+    public void setBindAddress(String text) {
+        setProperty(BIND_ADDRESS, text);
+    }
+
+    public String getBindPort() {
+        return getPropertyAsString(BIND_PORT);
+    }
+
+    public int getBindPortAsInt() {
+        return getPropertyAsInt(BIND_PORT);
+    }
+
+    public void setBindPort(String text) {
+        setProperty(BIND_PORT, text);
     }
 
     @Override
@@ -79,7 +107,6 @@ public class UDPSampler extends AbstractIPSampler implements UDPTrafficDecoder, 
     protected byte[] processIO(SampleResult res) throws Exception {
         connect(res);
         send();
-
         if (!isWaitResponse()) {
             return noResponseFinish(res);
         } else {
@@ -90,11 +117,9 @@ public class UDPSampler extends AbstractIPSampler implements UDPTrafficDecoder, 
     private byte[] readResponseFinish(SampleResult res) throws IOException {
         try {
             ByteArrayOutputStream response = readResponse(res);
-
             if (isCloseChannel()) {
                 channel.close();
             }
-
             return encoder.decode(response.toByteArray());
         } catch (IOException ex) {
             channel.close();
@@ -105,17 +130,14 @@ public class UDPSampler extends AbstractIPSampler implements UDPTrafficDecoder, 
     private byte[] noResponseFinish(SampleResult res) throws IOException {
         res.latencyEnd();
         res.sampleEnd();
-
         if (isCloseChannel()) {
             channel.close();
         }
-
         return new byte[0];
     }
 
     private void send() throws IOException {
         ByteBuffer sendBuf = encoder.encode(getRequestData());
-
         while (sendBuf.remaining() > 0) {
             channel.write(sendBuf);
         }
@@ -125,6 +147,11 @@ public class UDPSampler extends AbstractIPSampler implements UDPTrafficDecoder, 
         if (channel == null || !channel.isOpen()) {
             try {
                 channel = (DatagramChannel) getChannel();
+                String bindAddress = getBindAddress();
+                if (bindAddress.isEmpty()) {
+                    bindAddress = "0.0.0.0";
+                }
+                channel.socket().bind(new InetSocketAddress(bindAddress, getBindPortAsInt()));
             } catch (IOException ex) {
                 log.error("Cannot open channel", ex);
             }
@@ -139,7 +166,6 @@ public class UDPSampler extends AbstractIPSampler implements UDPTrafficDecoder, 
         recvBuf.clear();
         if ((cnt = channel.read(recvBuf)) != -1) {
             res.latencyEnd();
-            //log.debug("Read " + recvBuf.toString());
             recvBuf.flip();
             byte[] bytes = new byte[cnt];
             recvBuf.get(bytes);

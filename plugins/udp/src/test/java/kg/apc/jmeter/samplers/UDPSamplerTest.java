@@ -6,12 +6,10 @@ import org.apache.jmeter.samplers.SampleResult;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
-
 import static org.junit.Assert.*;
 
 public class UDPSamplerTest {
@@ -174,29 +172,16 @@ public class UDPSamplerTest {
     }
 
     @Test
-    public void testProcessIO() throws Exception {
-        System.out.println("processIO");
-        instance.threadStarted();
-        SampleResult res = new SampleResult();
-        instance.setRequestData("453555");
-        byte[] result = instance.processIO(res);
-        assertEquals("", new String(result));
-    }
-
-
-    @Test
     public void testThreadStarted() {
         System.out.println("threadStarted");
         instance.threadStarted();
     }
-
 
     @Test
     public void testThreadFinished() {
         System.out.println("threadFinished");
         instance.threadFinished();
     }
-
 
     @Test
     public void testInterrupt() {
@@ -205,7 +190,6 @@ public class UDPSamplerTest {
         assertEquals(true, result);
     }
 
-
     @Test
     public void testIsCloseChannel() {
         System.out.println("isCloseChannel");
@@ -213,7 +197,6 @@ public class UDPSamplerTest {
         boolean result = instance.isCloseChannel();
         assertEquals(false, result);
     }
-
 
     @Test
     public void testSetCloseChannel() {
